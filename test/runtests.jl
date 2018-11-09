@@ -255,9 +255,9 @@ function alnscore(::Type{S}, affinegap::AffineGapScoreModel{T}, alnstr::Abstract
     lines = split(chomp(alnstr), '\n')
     a, b = lines[1:2]
     m = length(a)
-    @assert m == length(b)
 
     if length(lines) == 2
+        @assert m == length(b)
         start = 1
         while start ≤ m && a[start] == ' ' || b[start] == ' '
             start += 1
@@ -284,7 +284,7 @@ function alnscore(::Type{S}, affinegap::AffineGapScoreModel{T}, alnstr::Abstract
             score += gap_extending_b ? gap_extend : (gap_open + gap_extend)
             gap_extending_b = true
         else
-            score += affinegap.submat[a[i],b[i]]
+            score += BioAlignments.pair_score(affinegap.submat, i, a[i], i, b[i])
             gap_extending_a = false
             gap_extending_b = false
         end
@@ -401,6 +401,33 @@ end
         @test submat[DNA_T,DNA_A] === 4
         @test submat[DNA_A,DNA_A] === 0
         @test submat[DNA_A,DNA_G] === -1
+
+        pssm = PositionSpecificSubstitutionMatrix(submat, "ACGT", "TCAAG")
+        @test size(pssm.data) === (4, 5)
+
+        @test pssm[1, 1] === 5
+        @test pssm[1, 2] === -1
+        @test pssm[1, 3] === 0
+        @test pssm[1, 4] === 0
+        @test pssm[1, 5] === -1
+
+        @test pssm[2, 1] === -1
+        @test pssm[2, 2] === 0
+        @test pssm[2, 3] === -1
+        @test pssm[2, 4] === -1
+        @test pssm[2, 5] === -1
+
+        @test pssm[3, 1] === -1
+        @test pssm[3, 2] === -1
+        @test pssm[3, 3] === -1
+        @test pssm[3, 4] === -1
+        @test pssm[3, 5] === 0
+
+        @test pssm[4, 1] === 0
+        @test pssm[4, 2] === -1
+        @test pssm[4, 3] === 4
+        @test pssm[4, 4] === 4
+        @test pssm[4, 5] === -1
 
         submat = DichotomousSubstitutionMatrix(5, -4)
         @test isa(submat, DichotomousSubstitutionMatrix{Int})
@@ -1027,6 +1054,16 @@ end
                   | |||| | |
           ref: 49 CVVESSVLRA 58
         """
+        # repeat the test above with PSSM
+        model = AffineGapScoreModel(PositionSpecificSubstitutionMatrix(BLOSUM62, seq1, seq2), gap_open=-10, gap_extend=-1)
+        aln = alignment(pairalign(GlobalAlignment(), seq1, seq2, model))
+        @test sprint(show, aln) ==
+        """
+        PairwiseAlignment{BioSequences.BioSequence{BioSequences.AminoAcidAlphabet},BioSequences.BioSequence{BioSequences.AminoAcidAlphabet}}:
+          seq:  1 EPVTSHPKAVSPTETK--PTEKGQHLPVSAPPKITQSLKAEASKDIAKLTCAVESSALCA 58
+                  ||  ||||||||||||  |||| ||||||||||||| ||||||| |||||| |||| | |
+          ref:  1 EP--SHPKAVSPTETKRCPTEKVQHLPVSAPPKITQFLKAEASKEIAKLTCVVESSVLRA 58
+        """
         # Result from EMBOSS Needle:
         # EMBOSS_001         1 EPVTSHPKAVSPTETK--PTEKGQHLPVSAPPKITQSLKAEASKDIAKLT     48
         #                      ||  ||||||||||||  ||||.|||||||||||||.|||||||:|||||
@@ -1312,14 +1349,14 @@ end
             field_l = length(field_ops)
             return cigar_l, field_l
         end
-    
+
         function check_cigar_vs_field(rec::BAM.Record)
             cigar = BAM.cigar(rec)
             field = BAM.cigar(rec, false)
             cigar_l, field_l = get_cigar_lens(rec)
             return cigar != field && cigar_l != field_l
         end
-        
+
         function check_cigar_lens(rec::BAM.Record, field_len, cigar_len)
             cigar_l, field_l = get_cigar_lens(rec)
             return cigar_l == cigar_len && field_l == field_len

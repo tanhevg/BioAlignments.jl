@@ -72,7 +72,7 @@ macro update2(args...)
         push!(ex.args, :(e = E[i-j+U+1]))
     end
     push!(ex.args, quote
-        g = H[(i-1)-(j-1)+U+1] + submat[a[i],b_j]
+        g = H[(i-1)-(j-1)+U+1] + pair_score(submat, i, a[i], j, b_j)
         h = max($(args...))
         H[i-j+U+1] = h
     end)

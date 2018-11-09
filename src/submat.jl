@@ -15,6 +15,8 @@ The required method:
 """
 abstract type AbstractSubstitutionMatrix{S<:Real} end
 
+function pair_score end
+
 """
 Substitution matrix.
 """
@@ -72,6 +74,10 @@ function SubstitutionMatrix(scores::AbstractDict{Tuple{T,T},S};
         defined[i,j] = true
     end
     return SubstitutionMatrix(T, submat, defined, default_match, default_mismatch)
+end
+
+function pair_score(mx::SubstitutionMatrix{T}, i::Int, ai::T, j::Int, aj::T) where {T}
+    return mx[ai, aj]
 end
 
 Base.convert(::Type{Matrix}, submat::SubstitutionMatrix) = copy(submat.data)
@@ -159,6 +165,11 @@ function DichotomousSubstitutionMatrix(match::Real, mismatch::Real)
     return DichotomousSubstitutionMatrix{typ}(match, mismatch)
 end
 
+function pair_score(mx::DichotomousSubstitutionMatrix, i::Int, ai::T, j::Int, aj::T) where {T}
+    return mx[ai, aj]
+end
+
+
 function Base.convert(::Type{SubstitutionMatrix{T,S}},
                       submat::DichotomousSubstitutionMatrix) where {T,S}
     n = length(BioSymbols.alphabet(T)) - 1
@@ -182,6 +193,38 @@ function Base.show(io::IO, submat::DichotomousSubstitutionMatrix)
     print(io, "  mismatch = ", lpad(mismatch, w))
 end
 
+struct PositionSpecificSubstitutionMatrix{S} <: AbstractSubstitutionMatrix{S}
+    data::Matrix{S}
+end
+
+function PositionSpecificSubstitutionMatrix(submat::SubstitutionMatrix{T,S}, seq1::SS, seq2::SS) where {T, S, SS}
+    m = length(seq1)
+    n = length(seq2)
+    data = Matrix{S}(undef, m, n)
+    @inbounds for i in 1:m
+        @inbounds for j in 1:n
+            data[i, j] = submat[seq1[i], seq2[j]]
+        end
+    end
+    PositionSpecificSubstitutionMatrix(data)
+end
+
+function pair_score(mx::PositionSpecificSubstitutionMatrix, i::Int, ai::T, j::Int, aj::T) where {T}
+    return mx[i, j]
+end
+
+@inline function Base.getindex(mx::PositionSpecificSubstitutionMatrix, i::Int, j::Int)
+    return mx.data[i, j]
+end
+
+function Base.setindex!(mx::PositionSpecificSubstitutionMatrix{S}, val::S, i::Int, j::Int) where S
+    mx.data[i, j] = val
+    return mx
+end
+
+function Base.convert(::Type{Matrix{S}}, pssm::PositionSpecificSubstitutionMatrix{S}) where {S}
+    return copy(pssm.mx)
+end
 
 # Predefined Substitution Matrices
 # --------------------------------

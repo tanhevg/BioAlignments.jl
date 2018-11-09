@@ -32,6 +32,7 @@ export
     AbstractSubstitutionMatrix,
     SubstitutionMatrix,
     DichotomousSubstitutionMatrix,
+    PositionSpecificSubstitutionMatrix,
     EDNAFULL,
     PAM30,
     PAM70,

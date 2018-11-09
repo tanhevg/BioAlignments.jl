@@ -15,7 +15,7 @@ function edit_distance(a, b, submat::AbstractSubstitutionMatrix{T}, insertion_co
         for i in 1:m
             ins = D[i]   + insertion_cost
             del = D[i+1] + deletion_cost
-            mat = d_diag + submat[a[i],b[j]]
+            mat = d_diag + pair_score(submat, i, a[i], j, b[j])
             # find the best score and its trace
             best = min(del, ins, mat)
             t = TRACE_NONE
@@ -53,4 +53,3 @@ function edit_traceback(a, b, trace, endpos)
     @finish_traceback
     return AlignedSequence(a, anchors)
 end
-

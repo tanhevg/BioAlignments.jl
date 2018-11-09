@@ -1,6 +1,6 @@
 # Needleman-Wunsch Algorithm
 # ==========================
-# 
+#
 # The Needleman-Wunsch algorithm.
 #
 # This file is a part of BioJulia.
@@ -38,7 +38,7 @@ end
 macro update()
     esc(quote
         e = E[i]
-        g = h_diag + submat[a[i],b_j]
+        g = h_diag + pair_score(submat, i, a[i], j, b_j)
         h = max(e, f, g)
         h_diag = H[i+1]
         H[i+1] = h

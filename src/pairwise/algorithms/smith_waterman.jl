@@ -75,7 +75,7 @@ function run!(
         trace[1,j+1] = TRACE_NONE
         for i in 1:m
             e = E[i]
-            g = h_diag + submat[a[i],b_j]
+            g = h_diag + pair_score(submat, i, a[i], j, b_j)
             h = max(T(0), e, f, g)
             h_diag = H[i+1]
             H[i+1] = h
