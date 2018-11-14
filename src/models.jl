@@ -83,14 +83,6 @@ function AffineGapScoreModel(submat::AbstractSubstitutionMatrix{T}; gaps...) whe
     return AffineGapScoreModel(submat, T(gap_open), T(gap_extend))
 end
 
-function AffineGapScoreModel(submat::AbstractMatrix{T}, gap_open, gap_extend) where T
-    return AffineGapScoreModel(SubstitutionMatrix(submat), gap_open, gap_extend)
-end
-
-function AffineGapScoreModel(submat::AbstractMatrix{T}; gaps...) where T
-    return AffineGapScoreModel(SubstitutionMatrix(submat); gaps...)
-end
-
 # handy interface
 function AffineGapScoreModel(; scores...)
     scores = Dict(scores)
